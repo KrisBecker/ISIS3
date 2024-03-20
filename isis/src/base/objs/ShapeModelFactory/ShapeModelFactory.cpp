@@ -31,6 +31,10 @@ find files of those names at the top level of this repository. **/
 #include "PvlKeyword.h"
 #include "Target.h"
 
+#include <PsmrtsModelFactory.hpp>
+#include <PsmrtsIsisShapeModel.h>
+#include <psmrts_version.h>
+
 using namespace std;
 
 namespace Isis {
@@ -100,6 +104,16 @@ namespace Isis {
     // Create shape model
     ShapeModel *shapeModel = NULL;
 
+#if defined(DEBUG_MISSING_RADII)
+    std::cout << "ShapeModelFactory Model:  " << shapeModelFilenames << std::endl;
+    std::cout << "Valid Target?             " << toString( target != nullptr ) << std::endl;
+    if ( target != nullptr ) {
+      std::cout << "NaifBodyCode:             " << target->naifBodyCode()  << std::endl;
+      std::cout << "naifPlanetSystemCode:     " << target->naifPlanetSystemCode()  << std::endl;
+      std::cout << "name:                     " << target->name()  << std::endl;
+      std::cout << "SystemName:               " << target->systemName()  << std::endl;
+    }
+#endif
     // TODO: If there is no shape model filename, the shape model type defaults to an
     // ellipsoid (should it?).
 
@@ -152,6 +166,46 @@ namespace Isis {
       QString fileErrorMsg = "Invalid shape model file ["
                              + shapeModelFilenames + "] in Kernels group.";
       IException fileError(IException::Io, fileErrorMsg, _FILEINFO_);
+
+
+      //-------------- Check for psmrts engine first -------------------------------//
+      if ( "psmrts" == preferred ) {
+        try {
+          std::cout << "\nUsing PSMRTS version " << PSMRTS_VERSION << std::endl; 
+          psmrts::PsmrtsPriorityTracer tracer_p = PsmrtsModelFactory::create_priority_tracer( shapeModelFilenames, 
+                                                                                              parameters, target, pvl,
+                                                                                              kernelsPvlGroup );
+
+          PsmrtsIsisShapeModel *model_t = new PsmrtsIsisShapeModel ( tracer_p, target, &pvl );
+
+          // Only apply a tolerance if present
+          if ( parameters.exists( "Tolerance") ) {
+            double tol_p = toDouble( parameters.get("Tolerance" ) );
+            model_t->set_tolerance( tol_p );
+            kernelsPvlGroup.addKeyword(PvlKeyword("Tolerance", parameters.get("Tolerance" )), 
+                                       PvlContainer::Replace);            
+          }
+
+          return ( model_t );
+        }
+        catch ( IException &ie ) {
+          fileError.append(ie);
+          QString mess = "Unable to create preferred PSMRTS model";
+          fileError.append(IException(IException::Unknown, mess, _FILEINFO_));
+          if ("fail" == onerror) {
+            throw fileError;
+          }
+        }
+        catch ( std::runtime_error &ie_r ) {
+          fileError.append(IException( IException::Unknown,  ie_r.what(), _FILEINFO_) );
+          QString mess = "--**++ PSMRTS ++**-- Error loading shape model in PSMRTS";
+          fileError.append(IException(IException::Unknown, mess, _FILEINFO_));
+          if ("fail" == onerror) {
+            throw fileError;
+          }          
+        }
+
+      }
 
       //-------------- Check for bullet engine first -------------------------------//
       if ( "bullet" == preferred ) {

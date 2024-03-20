@@ -16,6 +16,7 @@ set(CMAKE_FIND_FRAMEWORK LAST)
 # Enable use of @rpath on Mac
 set(CMAKE_MACOSX_RPATH 1)
 
+include(FetchContent)
 include(AddIsisModule)
 include(Utilities)
 include(TestSetup)
@@ -293,6 +294,28 @@ find_package(Geos    3.5.0     REQUIRED)
 find_package(Armadillo         REQUIRED)
 find_package(Threads)
 find_package(inja              REQUIRED)
+
+# Configure/install PSMRTS
+set(PSMRTS_DIR ${CMAKE_SOURCE_DIR}/../psmrts )
+message( STATUS "PSMRTS_DIR: "  ${PSMRTS_DIR} )
+
+FetchContent_Declare( 
+  psmrts
+  GIT_REPOSITORY http://orgit:7990/scm/isis/psmrts.git
+  GIT_TAG        origin/feature/psmrts-isis-integration
+  EXCLUDE_FROM_ALL
+  SOURCE_DIR ${PSMRTS_DIR}
+)
+FetchContent_MakeAvailable( psmrts )
+include_directories( ${CMAKE_SOURCE_DIR}/psmrts/src ${PSMRTS_DIR}/psmrts/src ${PSMRTS_DIR}/tracers/naifdsk/src )
+#add_subdirectory( ${PSMRTS} ) 
+#find_package(psmrts            REQUIRED CONFIG)
+set(PSMRTS_ISIS_DIR ${PSMRTS_DIR}/isis )
+message( STATUS "PSMRTS_ISIS_DIR: "  ${PSMRTS_ISIS_DIR} )
+
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${PSMRTS_ISIS_DIR}/src/base/objs/PsmrtsIsisShapeModel ${CMAKE_SOURCE_DIR}/src/base/objs/PsmrtsIsisShapeModel )
+#add_dependencies(isis psrmtsisis)
 
 # Setup for googletest/googlemock before adding SensorUtilities so we build its tests
 if(buildTests)

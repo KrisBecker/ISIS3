@@ -11,6 +11,7 @@ dependencies:
   - usgs-astrogeology::bullet
   - bz2file
   - bzip2
+  - catch2
   - cmake >=3.15, <4
   - cspice=67
   - csm>=3.0.3,<3.0.4

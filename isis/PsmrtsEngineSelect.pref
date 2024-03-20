@@ -1,0 +1,16 @@
+#######################################################
+# This file allows the user to customize their Isis
+# configuration.  See the Isis Preference Dictionary
+# on our website isis.astrogeology.usgs.gov for a
+# full description of each group.
+########################################################
+
+Group = ShapeModel
+  RayTraceEngine = Psmrts
+  OnError = Continue
+
+ShapeModel_NO = ( $osirisrex/kernels/dsk/g_00880mm_alt_ptm_0000n00000_v020.bds, 
+                 $osirisrex/kernels/dsk/bennu_g_00880mm_alt_obj_0000n00000_v020.bds )
+EndGroup
+
+End
